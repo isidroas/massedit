@@ -57,7 +57,9 @@ def is_list(arg):
     iterable.
 
     """
-    return iter(arg) and not isinstance(arg, unicode)
+    # is instance(Iterable)?
+    return iter(arg) and not isinstance(arg, unicode) # python2
+
 
 
 def get_function(fn_name):
@@ -119,6 +121,8 @@ class MassEdit(object):
         self.dry_run = None
         self.encoding = "utf-8"
         self.newline = None
+
+        # why it is using kwargs? less boilerplate
         if "module" in kwds:
             self.import_module(kwds["module"])
         if "code" in kwds:
@@ -151,10 +155,10 @@ class MassEdit(object):
 
     @staticmethod
     def __edit_line(line, code, code_obj):  # pylint: disable=R0201
-        """Edit a line with one code object built in the ctor."""
+        """Edit a line with one code object built in the ctor.""" # ctor?
         try:
             # pylint: disable=eval-used
-            result = eval(code_obj, globals(), locals())
+            result = eval(code_obj, globals(), locals()) # only needs line?
         except TypeError as ex:
             log.error("failed to execute %s: %s", code, ex)
             raise
@@ -245,6 +249,7 @@ class MassEdit(object):
         """
         if file_name == "-":
             from_lines = readlines(sys.stdin)
+            # renombrarlo a "<string>" o <stdin>
         else:
             with io.open(file_name, "r", encoding=self.encoding) as from_file:
                 from_lines = readlines(from_file)
@@ -261,7 +266,7 @@ class MassEdit(object):
             except Exception as err:
                 log.error("failed to execute %s: %s", " ".join(exec_list), err)
                 raise  # Let the exception be handled at a higher level.
-            to_lines = output.split(unicode("\n"))
+            to_lines = output.split(unicode("\n")) # python2
         else:
             to_lines = from_lines
 
@@ -404,7 +409,7 @@ def parse_command_line(argv):
         "-e",
         "--expression",
         dest="expressions",
-        nargs=1,
+        nargs=1, # redundant?
         help="Python expressions applied to target files. "
         "Use the line variable to reference the current line.",
     )
@@ -427,7 +432,7 @@ def parse_command_line(argv):
     parser.add_argument(
         "-s",
         "--start",
-        dest="start_dirs",
+        dest="start_dirs", # plural or singular?
         help="Directory(ies) from which to look for targets.",
     )
     parser.add_argument(
@@ -466,6 +471,7 @@ def parse_command_line(argv):
     )
     arguments = parser.parse_args(argv[1:])
 
+    # use https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_mutually_exclusive_group
     if not (
         arguments.expressions
         or arguments.functions
@@ -543,6 +549,8 @@ def fixit(lines, file_name):
 
 def generate_fixer_file(output):
     """Generate a template fixer file to be used with --function option."""
+    # be sure that extension in .py
+    # or instead, print stdout
     with open(output, "w+") as fh:
         fh.write(fixer_template)
     return
@@ -556,7 +564,7 @@ def edit_files(
     executables=None,
     start_dirs=None,
     max_depth=1,
-    dry_run=True,
+    dry_run=True, # a bit of duplication but is inevitable
     output=sys.stdout,
     encoding=None,
     newline=None,
@@ -609,7 +617,7 @@ def edit_files(
                 encoding = output.encoding
                 if encoding:
                     bytes_diff = diff.encode(encoding=encoding, errors="ignore")
-                    diff = bytes_diff.decode(encoding=output.encoding)
+                    diff = bytes_diff.decode(encoding=output.encoding) # errors directly here?
                 output.write(diff)
         except UnicodeDecodeError as err:
             log.error("failed to process %s: %s", path, err)
@@ -627,8 +635,8 @@ def command_line(argv):
     """
     arguments = parse_command_line(argv)
     if arguments.generate:
-        generate_fixer_file(arguments.generate)
-    paths = edit_files(
+        generate_fixer_file(arguments.generate) # use type=...
+    edit_files(
         arguments.patterns,
         expressions=arguments.expressions,
         functions=arguments.functions,
@@ -645,7 +653,6 @@ def command_line(argv):
     is_sys = arguments.output in [sys.stdout, sys.stderr]
     if not is_sys and isinstance(arguments.output, io.IOBase):
         arguments.output.close()
-    return paths
 
 
 def main():
