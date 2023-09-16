@@ -222,6 +222,7 @@ class MassEdit(object):
                 new.writelines(to_lines)
             # Keeps mode of original file.
             shutil.copymode(bak_file_name, file_name)
+            # if overwrittes it does not keep the mode?
         except Exception as err:
             log.error("failed to write output to %s: %s", file_name, err)
             # Try to recover...
@@ -347,6 +348,7 @@ class MassEdit(object):
                 self.append_function(func)
             except (ValueError, AttributeError) as ex:
                 log.error("'%s' is not a callable function: %s", func, ex)
+                # duplicated exception with append_function
                 raise
 
     def set_executables(self, executables):
